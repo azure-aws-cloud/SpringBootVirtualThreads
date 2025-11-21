@@ -34,5 +34,9 @@ public class VirtualThreadConfig {
 | Messaging frameworks (Kafka)           | ⚠ Depends    | Works, but rarely needed             |
 | CPU-heavy tasks (image processing, ML) | ❌ No         | Use platform threads or thread pools |
 
+❗ Important Rule:
+
+Virtual threads do not fix CPU bottlenecks — they fix thread contention caused by blocking.
+
 
 ```
