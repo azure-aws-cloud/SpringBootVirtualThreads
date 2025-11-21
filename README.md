@@ -26,4 +26,13 @@ public class VirtualThreadConfig {
     }
 }
 
+| Use Case                               | Recommended? | Notes                                |
+| -------------------------------------- | ------------ | ------------------------------------ |
+| Blocking JDBC                          | ✅ Yes        | Perfect match                        |
+| REST API calls (synchronous)           | ✅ Yes        | Helps concurrency                    |
+| File I/O                               | ✅ Yes        | Uses OS-level blocking               |
+| Messaging frameworks (Kafka)           | ⚠ Depends    | Works, but rarely needed             |
+| CPU-heavy tasks (image processing, ML) | ❌ No         | Use platform threads or thread pools |
+
+
 ```
