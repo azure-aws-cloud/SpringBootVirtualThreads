@@ -38,5 +38,18 @@ public class VirtualThreadConfig {
 
 Virtual threads do not fix CPU bottlenecks — they fix thread contention caused by blocking.
 
+🚀 Virtual Threads Change This
+
+Virtual threads:
+
+cost almost nothing to create
+
+are scheduled by JVM—not the OS
+
+unmount from physical threads when blocked
+
+So when blocking happens, the virtual thread parks itself, and the underlying platform thread becomes free for another task.
+
+➡️ That means you can have 100,000+ blocking tasks with no huge thread pools or tuning.
 
 ```
