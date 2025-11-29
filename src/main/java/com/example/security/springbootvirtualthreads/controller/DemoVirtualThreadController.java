@@ -4,6 +4,10 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -33,13 +37,34 @@ public class DemoVirtualThreadController {
     @Async("virtualExecutor")
     @GetMapping("/async")
     public CompletableFuture<String> asyncTask() {
+        HttpClient httpClient = HttpClient.newHttpClient();
+
         return CompletableFuture.supplyAsync(() -> {
-            try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
-            System.out.println("running on thread: " + Thread.currentThread());
-            return "Running on: " + Thread.currentThread();
+            try {
+                HttpResponse<String> response = httpClient.send(
+                        HttpRequest.newBuilder(URI.create("https://httpbin.org/delay/3"))
+                                .GET()
+                                .build(),
+                        HttpResponse.BodyHandlers.ofString()
+                );
+                return "Response: " + response.body() +
+                        "\nThread: " + Thread.currentThread();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }, virtualExecutor);
     }
-
-
 }
 
+
+
+/*
+     HttpClient httpClient = HttpClient.newHttpClient();
+
+        return httpClient.sendAsync(
+                        HttpRequest.newBuilder(URI.create("https://httpbin.org/delay/3")).GET().build(),
+                        HttpResponse.BodyHandlers.ofString()
+                )
+                .thenApply(HttpResponse::body)
+                .thenApply(body -> "Response: " + body);
+ */
