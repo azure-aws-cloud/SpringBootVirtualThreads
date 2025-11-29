@@ -36,7 +36,7 @@ public class DemoVirtualThreadController {
     }
     @Async("virtualExecutor")
     @GetMapping("/async")
-    public CompletableFuture<String> asyncTask() {
+    public CompletableFuture<String> asyncTask() { // <----------This entire method runs in a virtual thread !!!
         HttpClient httpClient = HttpClient.newHttpClient();
 
         return CompletableFuture.supplyAsync(() -> {
@@ -48,7 +48,7 @@ public class DemoVirtualThreadController {
                         HttpResponse.BodyHandlers.ofString()
                 );
                 return "Response: " + response.body() +
-                        "\nThread: " + Thread.currentThread();
+                        "\nThread: " + Thread.currentThread(); // <--- This is virtual thread like VirtualThread[#74]/runnable@ForkJoinPool-1-worker-8
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
