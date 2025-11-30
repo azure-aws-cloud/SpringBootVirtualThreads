@@ -27,7 +27,9 @@
     }
 }
 
-
+/*
+    Correct virtual thread implementation below !!!
+*/
 @Async("virtualExecutor")
 @GetMapping("/async")
 public CompletableFuture<String> externalPLMCloudAPI() {
