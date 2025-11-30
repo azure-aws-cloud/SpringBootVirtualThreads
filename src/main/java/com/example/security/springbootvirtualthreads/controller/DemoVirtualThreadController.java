@@ -34,7 +34,7 @@ public class DemoVirtualThreadController {
         } catch (InterruptedException ignored) {
         }
 
-        return "Hello from Virtual Thread: " + Thread.currentThread().toString();
+        return "Hello from Platform Thread: " + Thread.currentThread().toString();
     }
 
     @GetMapping("/check")
@@ -45,12 +45,15 @@ public class DemoVirtualThreadController {
     @GetMapping("/async")
     @Async("virtualExecutor")
     @CircuitBreaker(name = "externalApiCB", fallbackMethod = "fallback")
+    /*
+        Running this code will create 2 virtual threads (not required)
+     */
     public CompletableFuture<String> asyncTask(@RequestParam(defaultValue = "false") boolean fail) {
         if (fail) {
             throw new RuntimeException("Forced failure for testing");
         }
 
-        System.out.println("received async request " + Thread.currentThread());
+        System.out.println("received async request " + Thread.currentThread());//<------First Virtual thread 1  like VirtualThread[#78]/runnable@ForkJoinPool-1-worker-8
         HttpClient httpClient = HttpClient.newHttpClient();
 
         return CompletableFuture.supplyAsync(() -> {
@@ -62,7 +65,7 @@ public class DemoVirtualThreadController {
                         HttpResponse.BodyHandlers.ofString()
                 );
                 return "Response: " + response.body() +
-                        "\nThread: " + Thread.currentThread(); // <--- This is virtual thread like VirtualThread[#74]/runnable@ForkJoinPool-1-worker-8
+                        "\nThread: " + Thread.currentThread(); // <--- This is second virtual thread like VirtualThread[#74]/runnable@ForkJoinPool-1-worker-8
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
