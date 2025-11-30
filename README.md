@@ -10,7 +10,7 @@
     public CompletableFuture<String> asyncTask() {
         HttpClient httpClient = HttpClient.newHttpClient();
 
-        return CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.supplyAsync(() -> { // aysnc completatblefuture is not required, it is duplicate virtual thread
             try {
                 HttpResponse<String> response = httpClient.send(
                         HttpRequest.newBuilder(URI.create("https://httpbin.org/delay/3"))
@@ -19,11 +19,30 @@
                         HttpResponse.BodyHandlers.ofString()
                 );
                 return "Response: " + response.body() +
-                        "\nThread: " + Thread.currentThread();
+                        "\nThread: " + Thread.currentThread(); // <---- this is another virtual thread 2
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }, virtualExecutor);
+    }
+}
+
+
+@Async("virtualExecutor")
+@GetMapping("/async")
+public CompletableFuture<String> externalPLMCloudAPI() {
+    try {
+        HttpResponse<String> response = httpClient.send(
+            HttpRequest.newBuilder(URI.create("https://httpbin.org/delay/3"))
+                    .GET()
+                    .build(),
+            HttpResponse.BodyHandlers.ofString()
+        );
+        return CompletableFuture.completedFuture(
+            "Response: " + response.body() +
+            "\nThread: " + Thread.currentThread()); //<----------Single virtual thread
+    } catch (Exception e) {
+        return CompletableFuture.failedFuture(e);
     }
 }
 
@@ -40,6 +59,7 @@ public class VirtualThreadConfig {
         return Executors.newVirtualThreadPerTaskExecutor();
     }
 }
+
 
 | Use Case                               | Recommended? | Notes                                |
 | -------------------------------------- | ------------ | ------------------------------------ |
