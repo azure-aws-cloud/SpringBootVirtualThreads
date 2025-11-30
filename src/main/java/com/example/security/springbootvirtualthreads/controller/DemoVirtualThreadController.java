@@ -1,7 +1,11 @@
 package com.example.security.springbootvirtualthreads.controller;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -15,6 +19,7 @@ import java.util.concurrent.Executor;
 public class DemoVirtualThreadController {
 
     private final Executor virtualExecutor;
+
     public DemoVirtualThreadController(final Executor virtualExecutor) {
         this.virtualExecutor = virtualExecutor;
     }
@@ -26,17 +31,26 @@ public class DemoVirtualThreadController {
         // Simulate blocking call (database, API call, file IO)
         try {
             Thread.sleep(1000);
-        } catch (InterruptedException ignored) {}
+        } catch (InterruptedException ignored) {
+        }
 
         return "Hello from Virtual Thread: " + Thread.currentThread().toString();
     }
+
     @GetMapping("/check")
     public String check() {
         return Thread.currentThread().toString();
     }
-    @Async("virtualExecutor")
+
     @GetMapping("/async")
-    public CompletableFuture<String> asyncTask() { // <----------This entire method runs in a virtual thread !!!
+    @Async("virtualExecutor")
+    @CircuitBreaker(name = "externalApiCB", fallbackMethod = "fallback")
+    public CompletableFuture<String> asyncTask(@RequestParam(defaultValue = "false") boolean fail) {
+        if (fail) {
+            throw new RuntimeException("Forced failure for testing");
+        }
+
+        System.out.println("received async request " + Thread.currentThread());
         HttpClient httpClient = HttpClient.newHttpClient();
 
         return CompletableFuture.supplyAsync(() -> {
@@ -54,7 +68,45 @@ public class DemoVirtualThreadController {
             }
         }, virtualExecutor);
     }
+
+
+    @Async("virtualExecutor")
+    @GetMapping("/async1")
+    public CompletableFuture<String> externalPLMCloudAPI() {
+        HttpClient httpClient = HttpClient.newHttpClient();
+        System.out.println("received async request " + Thread.currentThread());
+        try {
+            HttpResponse<String> response = httpClient.send(
+                    HttpRequest.newBuilder(URI.create("https://httpbin.org/delay/3"))
+                            .GET()
+                            .build(),
+                    HttpResponse.BodyHandlers.ofString()
+            );
+            return CompletableFuture.completedFuture(
+                    "Response: " + response.body() +
+                            "\nThread: " + Thread.currentThread());
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+
+
+
+
+
+    /**
+     * Fallback method for circuit breaker
+     * Must match return type and accept Throwable as param
+     */
+    private CompletableFuture<String> fallback(Throwable ex) {
+        return CompletableFuture.completedFuture(
+                "Fallback response — external service unavailable.\n" +
+                        "Cause: " + ex.getMessage()
+        );
+    }
 }
+
 
 
 
