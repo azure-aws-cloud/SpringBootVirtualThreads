@@ -74,6 +74,7 @@ public class DemoVirtualThreadController {
 
 
     @Async("virtualExecutor")
+    // @Async , this will run in SimpleAsyncTaskExecutor, platform thread not virtual thread
     @GetMapping("/async1")
     public CompletableFuture<String> externalPLMCloudAPI() {
         HttpClient httpClient = HttpClient.newHttpClient();
